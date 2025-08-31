@@ -57,8 +57,28 @@
         <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">ระบบแจ้งซ่อมระบบไฟฟ้า</h1>
         <p id="auth-status" class="text-sm text-center text-gray-500 mb-6">กำลังเชื่อมต่อ...</p>
         
-        <div id="report-form" class="bg-blue-50 p-6 rounded-lg mb-6">
+        <!-- User Registration Form -->
+        <div id="registration-form" class="bg-indigo-50 p-6 rounded-lg mb-6 hidden">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">ลงทะเบียนผู้ใช้</h2>
+            <form id="new-user-form" class="space-y-4">
+                <div>
+                    <label for="firstName" class="block text-sm font-medium text-gray-700">ชื่อ:</label>
+                    <input type="text" id="firstName" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="lastName" class="block text-sm font-medium text-gray-700">นามสกุล:</label>
+                    <input type="text" id="lastName" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 shadow-md">
+                    ลงทะเบียน
+                </button>
+            </form>
+        </div>
+
+        <!-- Maintenance Report Form -->
+        <div id="report-form-container" class="bg-blue-50 p-6 rounded-lg mb-6 hidden">
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">แจ้งปัญหาใหม่</h2>
+            <p id="responsible-person-display" class="text-base text-gray-600 mb-4"></p>
             <form id="new-report-form" class="space-y-4">
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700">หน่วยงาน:</label>
@@ -83,12 +103,6 @@
                         <option value="แพทย์แผนไทย">แพทย์แผนไทย</option>
                         <option value="โภชณาการ">โภชณาการ</option>
                         <option value="ห้องประชุม">ห้องประชุม</option>
-                    </select>
-                </div>
-                <div id="responsible-person-container" class="hidden">
-                    <label for="responsiblePerson" class="block text-sm font-medium text-gray-700">ผู้รับผิดชอบ:</label>
-                    <select id="responsiblePerson" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        <!-- Options will be populated by JavaScript -->
                     </select>
                 </div>
                 
@@ -156,46 +170,25 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const authStatusEl = document.getElementById('auth-status');
-        const reportForm = document.getElementById('new-report-form');
+        const registrationFormEl = document.getElementById('registration-form');
+        const newUserFormEl = document.getElementById('new-user-form');
+        const reportFormContainerEl = document.getElementById('report-form-container');
+        const reportFormEl = document.getElementById('new-report-form');
         const reportsTableBodyEl = document.getElementById('reports-table-body');
         const noReportsMessageEl = document.getElementById('no-reports-message');
         const imageUploadEl = document.getElementById('imageUpload');
         const fileNameEl = document.getElementById('file-name');
-        const departmentEl = document.getElementById('department');
-        const responsiblePersonContainerEl = document.getElementById('responsible-person-container');
-        const responsiblePersonEl = document.getElementById('responsiblePerson');
+        const responsiblePersonDisplayEl = document.getElementById('responsible-person-display');
         const downloadExcelButton = document.getElementById('download-excel');
 
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        const departmentResponsibilities = {
-            'วอร์ดหญิง': ['นาย A', 'นาง B'],
-            'วอร์ดชาย': ['นาย A', 'นาง B'],
-            'มินิธัญญารักษ์': ['นาย A', 'นาง B'],
-            'OR': ['นาย A', 'นาง B'],
-            'ICU': ['นาย A', 'นาง B'],
-            'ER': ['นาย A', 'นาง B'],
-            'OPD': ['นาย A', 'นาง B'],
-            'X Ray': ['นาย A', 'นาง B'],
-            'คัดกรอง': ['นาย A', 'นาง B'],
-            'ANC': ['นาย A', 'นาง B'],
-            'UC': ['นาย A', 'นาง B'],
-            'ห้องแลป': ['นาย A', 'นาง B'],
-            'จิตเวช': ['นาย A', 'นาง B'],
-            'คลังยา': ['นาย A', 'นาง B'],
-            'ขาเทียม': ['นาย A', 'นาง B'],
-            'กายภาพ': ['นาย A', 'นาง B'],
-            'แพทย์แผนไทย': ['นาย A', 'นาง B'],
-            'โภชณาการ': ['นาย A', 'นาง B'],
-            'ห้องประชุม': ['นาย A', 'นาง B']
-        };
-
-        let db, auth, userId, allReports = [];
+        let db, auth, userId, userProfile, allReports = [];
 
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
@@ -212,15 +205,60 @@
             });
         }
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 userId = user.uid;
-                authStatusEl.textContent = `เชื่อมต่อแล้วในฐานะ: ผู้ใช้ ID ${userId}`;
+                authStatusEl.textContent = `เชื่อมต่อแล้วในฐานะ: ID ผู้ใช้ ${userId}`;
+                
+                // Check if user profile exists
+                const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'info');
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    userProfile = userDocSnap.data();
+                    responsiblePersonDisplayEl.textContent = `ผู้รับผิดชอบ: ${userProfile.firstName} ${userProfile.lastName}`;
+                    reportFormContainerEl.classList.remove('hidden');
+                    registrationFormEl.classList.add('hidden');
+                } else {
+                    responsiblePersonDisplayEl.textContent = `ผู้รับผิดชอบ: (ยังไม่ได้ลงทะเบียน)`;
+                    reportFormContainerEl.classList.add('hidden');
+                    registrationFormEl.classList.remove('hidden');
+                }
                 
                 // Set up real-time listener for reports
                 setupRealtimeReports();
             } else {
                 authStatusEl.textContent = 'กำลังรอการเชื่อมต่อ...';
+                reportFormContainerEl.classList.add('hidden');
+                registrationFormEl.classList.add('hidden');
+            }
+        });
+
+        newUserFormEl.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+
+            if (!userId) {
+                console.error('User not authenticated.');
+                return;
+            }
+
+            try {
+                const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'info');
+                await setDoc(userDocRef, {
+                    firstName: firstName,
+                    lastName: lastName,
+                    timestamp: serverTimestamp()
+                });
+                
+                userProfile = { firstName, lastName };
+                responsiblePersonDisplayEl.textContent = `ผู้รับผิดชอบ: ${userProfile.firstName} ${userProfile.lastName}`;
+                reportFormContainerEl.classList.remove('hidden');
+                registrationFormEl.classList.add('hidden');
+
+            } catch (error) {
+                console.error("Error saving user profile: ", error);
             }
         });
 
@@ -274,30 +312,17 @@
             }
         }
 
-        // Handle department selection to show responsible person
-        departmentEl.addEventListener('change', () => {
-            const selectedDepartment = departmentEl.value;
-            if (selectedDepartment && departmentResponsibilities[selectedDepartment]) {
-                const responsiblePersons = departmentResponsibilities[selectedDepartment];
-                responsiblePersonEl.innerHTML = responsiblePersons.map(person => `<option value="${person}">${person}</option>`).join('');
-                responsiblePersonContainerEl.classList.remove('hidden');
-            } else {
-                responsiblePersonContainerEl.classList.add('hidden');
-                responsiblePersonEl.innerHTML = '';
-            }
-        });
-
         // Handle form submission
-        reportForm.addEventListener('submit', async (e) => {
+        reportFormEl.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            if (!userId) {
-                console.error('User not authenticated.');
+            if (!userId || !userProfile) {
+                console.error('User not authenticated or profile not set.');
                 return;
             }
 
             const department = document.getElementById('department').value;
-            const responsiblePerson = document.getElementById('responsiblePerson').value;
+            const responsiblePerson = `${userProfile.firstName} ${userProfile.lastName}`; // Use the registered user's name
             const description = document.getElementById('description').value;
             const problemType = document.getElementById('problemType').value;
             const imageFile = imageUploadEl.files[0];
@@ -320,8 +345,7 @@
                     imageUrl: imageUrl, // Save the image URL (placeholder in this case)
                     timestamp: serverTimestamp()
                 });
-                reportForm.reset();
-                responsiblePersonContainerEl.classList.add('hidden');
+                reportFormEl.reset();
                 fileNameEl.textContent = 'เลือกไฟล์'; // Reset the file name display
             } catch (error) {
                 console.error("Error adding document: ", error);
