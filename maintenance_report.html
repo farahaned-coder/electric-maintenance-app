@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแจ้งซ่อมไฟฟ้า</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 95%;
+            overflow-x: auto;
+        }
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+            background-color: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .file-input-label:hover {
+            background-color: #f9fafb;
+        }
+        #file-name {
+            margin-left: 0.5rem;
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        img {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 0.5rem;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container mx-auto p-6 bg-white rounded-xl shadow-lg">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">ระบบแจ้งซ่อมระบบไฟฟ้า</h1>
+        <p id="auth-status" class="text-sm text-center text-gray-500 mb-6">กำลังเชื่อมต่อ...</p>
+        
+        <div id="report-form" class="bg-blue-50 p-6 rounded-lg mb-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">แจ้งปัญหาใหม่</h2>
+            <form id="new-report-form" class="space-y-4">
+                <div>
+                    <label for="department" class="block text-sm font-medium text-gray-700">หน่วยงาน:</label>
+                    <select id="department" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">เลือกหน่วยงาน</option>
+                        <option value="วอร์ดหญิง">วอร์ดหญิง</option>
+                        <option value="วอร์ดชาย">วอร์ดชาย</option>
+                        <option value="มินิธัญญารักษ์">มินิธัญญารักษ์</option>
+                        <option value="OR">OR</option>
+                        <option value="ICU">ICU</option>
+                        <option value="ER">ER</option>
+                        <option value="OPD">OPD</option>
+                        <option value="X Ray">X Ray</option>
+                        <option value="คัดกรอง">คัดกรอง</option>
+                        <option value="ANC">ANC</option>
+                        <option value="UC">UC</option>
+                        <option value="ห้องแลป">ห้องแลป</option>
+                        <option value="จิตเวช">จิตเวช</option>
+                        <option value="คลังยา">คลังยา</option>
+                        <option value="ขาเทียม">ขาเทียม</option>
+                        <option value="กายภาพ">กายภาพ</option>
+                        <option value="แพทย์แผนไทย">แพทย์แผนไทย</option>
+                        <option value="โภชณาการ">โภชณาการ</option>
+                        <option value="ห้องประชุม">ห้องประชุม</option>
+                    </select>
+                </div>
+                <div id="responsible-person-container" class="hidden">
+                    <label for="responsiblePerson" class="block text-sm font-medium text-gray-700">ผู้รับผิดชอบ:</label>
+                    <select id="responsiblePerson" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="problemType" class="block text-sm font-medium text-gray-700">ประเภทของปัญหา:</label>
+                    <select id="problemType" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">เลือกประเภท</option>
+                        <option value="หลอดไฟ">หลอดไฟ</option>
+                        <option value="สวิตซ์ไฟ">สวิตซ์ไฟ</option>
+                        <option value="ปลั๊กไฟ">ปลั๊กไฟ</option>
+                        <option value="แบรกเกอร์">แบรกเกอร์</option>
+                        <option value="สายไฟ">สายไฟ</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">รายละเอียดอาการเสีย:</label>
+                    <textarea id="description" required rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label for="imageUpload" class="block text-sm font-medium text-gray-700">อัปโหลดรูปภาพ (ไม่บังคับ):</label>
+                    <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                    <label for="imageUpload" class="file-input-label">
+                        <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 011.414 0L10 9.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span id="file-name">เลือกไฟล์</span>
+                    </label>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 shadow-md">
+                    ส่งรายงาน
+                </button>
+            </form>
+        </div>
+
+        <div id="reports-list-container" class="bg-gray-50 p-6 rounded-lg">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">รายการปัญหาที่แจ้งแล้ว</h2>
+            <div class="overflow-x-auto">
+                <table id="reports-table" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+                            <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">หน่วยงาน</th>
+                            <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้รับผิดชอบ</th>
+                            <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                            <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">รายละเอียด</th>
+                            <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">รูปภาพ</th>
+                            <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้แจ้ง</th>
+                            <th scope="col" class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่แจ้ง</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reports-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Report rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <p id="no-reports-message" class="text-gray-500 text-center mt-4 hidden">ยังไม่มีรายงานในระบบ.</p>
+            <button id="download-excel" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 shadow-md">
+                ดาวน์โหลดข้อมูล (Excel)
+            </button>
+        </div>
+    </div>
+    
+    <!-- Firebase Libraries -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const authStatusEl = document.getElementById('auth-status');
+        const reportForm = document.getElementById('new-report-form');
+        const reportsTableBodyEl = document.getElementById('reports-table-body');
+        const noReportsMessageEl = document.getElementById('no-reports-message');
+        const imageUploadEl = document.getElementById('imageUpload');
+        const fileNameEl = document.getElementById('file-name');
+        const departmentEl = document.getElementById('department');
+        const responsiblePersonContainerEl = document.getElementById('responsible-person-container');
+        const responsiblePersonEl = document.getElementById('responsiblePerson');
+        const downloadExcelButton = document.getElementById('download-excel');
+
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const departmentResponsibilities = {
+            'วอร์ดหญิง': ['นาย A', 'นาง B'],
+            'วอร์ดชาย': ['นาย A', 'นาง B'],
+            'มินิธัญญารักษ์': ['นาย A', 'นาง B'],
+            'OR': ['นาย A', 'นาง B'],
+            'ICU': ['นาย A', 'นาง B'],
+            'ER': ['นาย A', 'นาง B'],
+            'OPD': ['นาย A', 'นาง B'],
+            'X Ray': ['นาย A', 'นาง B'],
+            'คัดกรอง': ['นาย A', 'นาง B'],
+            'ANC': ['นาย A', 'นาง B'],
+            'UC': ['นาย A', 'นาง B'],
+            'ห้องแลป': ['นาย A', 'นาง B'],
+            'จิตเวช': ['นาย A', 'นาง B'],
+            'คลังยา': ['นาย A', 'นาง B'],
+            'ขาเทียม': ['นาย A', 'นาง B'],
+            'กายภาพ': ['นาย A', 'นาง B'],
+            'แพทย์แผนไทย': ['นาย A', 'นาง B'],
+            'โภชณาการ': ['นาย A', 'นาง B'],
+            'ห้องประชุม': ['นาย A', 'นาง B']
+        };
+
+        let db, auth, userId, allReports = [];
+
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        // Sign in anonymously or with custom token
+        if (initialAuthToken) {
+            signInWithCustomToken(auth, initialAuthToken).catch((error) => {
+                console.error("Error signing in with custom token: ", error);
+            });
+        } else {
+            signInAnonymously(auth).catch((error) => {
+                console.error("Error signing in anonymously: ", error);
+            });
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                authStatusEl.textContent = `เชื่อมต่อแล้วในฐานะ: ผู้ใช้ ID ${userId}`;
+                
+                // Set up real-time listener for reports
+                setupRealtimeReports();
+            } else {
+                authStatusEl.textContent = 'กำลังรอการเชื่อมต่อ...';
+            }
+        });
+
+        function setupRealtimeReports() {
+            // Using a public data path as per instructions
+            const reportsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'reports');
+            const q = query(reportsCollection);
+
+            onSnapshot(q, (querySnapshot) => {
+                allReports = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    allReports.push({
+                        id: doc.id,
+                        ...data
+                    });
+                });
+                renderReports(allReports);
+            }, (error) => {
+                console.error("Error fetching real-time reports: ", error);
+            });
+        }
+
+        function renderReports(reports) {
+            reportsTableBodyEl.innerHTML = '';
+            if (reports.length === 0) {
+                noReportsMessageEl.classList.remove('hidden');
+                reportsTableBodyEl.parentElement.classList.add('hidden');
+            } else {
+                noReportsMessageEl.classList.add('hidden');
+                reportsTableBodyEl.parentElement.classList.remove('hidden');
+                
+                reports.forEach((report, index) => {
+                    const tableRow = document.createElement('tr');
+                    tableRow.className = 'hover:bg-gray-50';
+                    const date = report.timestamp ? new Date(report.timestamp.seconds * 1000).toLocaleDateString('th-TH') : 'ไม่ทราบวันที่';
+                    
+                    // Create the HTML for the table row
+                    tableRow.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${index + 1}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${report.department || 'ไม่ระบุ'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${report.responsiblePerson || 'ไม่ระบุ'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${report.problemType}</td>
+                        <td class="px-6 py-4 whitespace-normal max-w-xs">${report.description}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${report.imageUrl ? `<img src="${report.imageUrl}" alt="รูปภาพปัญหา">` : 'ไม่มีรูป'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${report.reporterId}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+                    `;
+                    reportsTableBodyEl.appendChild(tableRow);
+                });
+            }
+        }
+
+        // Handle department selection to show responsible person
+        departmentEl.addEventListener('change', () => {
+            const selectedDepartment = departmentEl.value;
+            if (selectedDepartment && departmentResponsibilities[selectedDepartment]) {
+                const responsiblePersons = departmentResponsibilities[selectedDepartment];
+                responsiblePersonEl.innerHTML = responsiblePersons.map(person => `<option value="${person}">${person}</option>`).join('');
+                responsiblePersonContainerEl.classList.remove('hidden');
+            } else {
+                responsiblePersonContainerEl.classList.add('hidden');
+                responsiblePersonEl.innerHTML = '';
+            }
+        });
+
+        // Handle form submission
+        reportForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!userId) {
+                console.error('User not authenticated.');
+                return;
+            }
+
+            const department = document.getElementById('department').value;
+            const responsiblePerson = document.getElementById('responsiblePerson').value;
+            const description = document.getElementById('description').value;
+            const problemType = document.getElementById('problemType').value;
+            const imageFile = imageUploadEl.files[0];
+
+            // In a real application, you would upload the image to Firebase Storage
+            // and then save the download URL to Firestore. This example only shows
+            // the UI component and saves a placeholder.
+            // For a complete implementation, you would need to set up Firebase Storage.
+            const imageUrl = imageFile ? 'https://via.placeholder.com/300x200.png?text=Image+Placeholder' : null;
+
+            const reportsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'reports');
+
+            try {
+                await addDoc(reportsCollection, {
+                    reporterId: userId,
+                    department: department,
+                    responsiblePerson: responsiblePerson,
+                    description: description,
+                    problemType: problemType,
+                    imageUrl: imageUrl, // Save the image URL (placeholder in this case)
+                    timestamp: serverTimestamp()
+                });
+                reportForm.reset();
+                responsiblePersonContainerEl.classList.add('hidden');
+                fileNameEl.textContent = 'เลือกไฟล์'; // Reset the file name display
+            } catch (error) {
+                console.error("Error adding document: ", error);
+            }
+        });
+
+        // Update file name display when a file is selected
+        imageUploadEl.addEventListener('change', () => {
+            if (imageUploadEl.files.length > 0) {
+                fileNameEl.textContent = imageUploadEl.files[0].name;
+            } else {
+                fileNameEl.textContent = 'เลือกไฟล์';
+            }
+        });
+        
+        // Export to Excel (CSV) functionality
+        downloadExcelButton.addEventListener('click', () => {
+            if (allReports.length === 0) {
+                return;
+            }
+            
+            const header = ["ลำดับ", "หน่วยงาน", "ผู้รับผิดชอบ", "ประเภท", "รายละเอียด", "รูปภาพ", "ผู้แจ้ง", "วันที่แจ้ง"];
+            
+            // Format data for CSV
+            const csvData = allReports.map((report, index) => {
+                const date = report.timestamp ? new Date(report.timestamp.seconds * 1000).toLocaleDateString('th-TH') : 'ไม่ทราบวันที่';
+                return [
+                    index + 1,
+                    `"${report.department || 'ไม่ระบุ'}"`,
+                    `"${report.responsiblePerson || 'ไม่ระบุ'}"`,
+                    `"${report.problemType}"`,
+                    `"${report.description}"`,
+                    `"${report.imageUrl || 'ไม่มีรูป'}"`,
+                    `"${report.reporterId}"`,
+                    `"${date}"`
+                ];
+            });
+            
+            const csvContent = [
+                header.join(','),
+                ...csvData.map(row => row.join(','))
+            ].join('\n');
+            
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'รายงานแจ้งซ่อมไฟฟ้า.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>
